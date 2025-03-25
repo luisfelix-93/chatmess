@@ -1,10 +1,11 @@
 ---
 name: "Relatar um problema ou sugerir melhoria"
-description: "Use este template para reportar um bug ou sugerir uma nova funcionalidade."
+about: "Use este template para reportar um bug ou sugerir uma nova funcionalidade."
 title: "[TÍTULO RESUMIDO]"
 labels: ["bug", "enhancement"]
 assignees: []
 ---
+
 
 ## Descrição do problema / Sugestão de melhoria
 
