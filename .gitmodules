@@ -1,0 +1,9 @@
+[submodule "chatmess-ws"]
+	path = chatmess-ws
+	url = https://github.com/luisfelix-93/chatmess-ws.git
+[submodule "chatmess-app"]
+	path = chatmess-app
+	url = https://github.com/luisfelix-93/chatmess-app.git
+[submodule "ChatMessAPI"]
+	path = ChatMessAPI
+	url = https://github.com/luisfelix-93/ChatMessAPI.git

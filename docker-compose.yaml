@@ -1,0 +1,69 @@
+version: '3.8'
+
+services: 
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    deploy:
+      replicas: 1 # MongoDB é stateful, não é possível ter mais de um container
+      placement:
+        constraints:
+          - node.role == manager # O container do MongoDB deve rodar em um nó manager
+    volumes:
+      - mongo_data:/data/db # Volume para persistir os dados do MongoDB
+      - mongo_logs:/var/log/mongodb # Volume para persistir os logs do MongoDB
+    command: "--logpath /var/log/mongodb/mongodb.log" # Argumento para o comando do MongoDB
+    networks:
+      - custom_network
+  
+  redis: 
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    deploy:
+      replicas: 1 # Redis é stateful, não é possível ter mais de um container
+    volumes: 
+      - redis_data:/data # Volume para persistir os dados do Redis
+    networks:
+      - custom_network 
+  
+  chatmess-api:
+    image: luisffilho/chatmessapi:latest
+    ports:
+      - "8080:8080"
+    deploy:
+      replicas: 1 # Escale horizontalmente a API
+      update_config:
+        parallelism: 1
+        delay: 10s
+    environment:
+      - DATABASEHELPER__CONNECTIONSTRING=mongodb://mongo:27017  # Use o nome do serviço para se conectar ao MongoDB
+      - DATABASEHELPER__DATABASENAME=chatmess-db
+      - DATABASEHELPER__MESSAGECOLLECTION=message
+      - DATABASEHELPER__USERCOLLECTION=user
+      - DATABASEHELPER__ROOMCOLLECTION=room
+    networks:
+      - custom_network
+    
+  chatmess-ws:
+    image: luisffilho/chatmessws:latest
+    ports:
+      - "3001:3001"
+    deploy:
+      replicas: 1 # Escale horizontalmente o WebSocket
+    environment:
+      - URL_MESSAGE=http://chatmess-api:8080/Message  # Comunicação via nome do serviço
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - custom_network
+
+networks:
+  custom_network:
+    driver: overlay # Rede overlay para comunicação entre os serviços
+
+volumes:
+  mongo_data:
+  mongo_logs:
+  redis_data:
