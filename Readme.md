@@ -65,3 +65,13 @@ Este arquivo `docker-compose.yaml` define um ambiente de conteinerização utili
 - **mongo_data**: Armazena os dados do MongoDB
 - **mongo_logs**: Armazena os logs do MongoDB
 - **redis_data**: Armazena os dados do Redis
+
+
+## Deploy
+
+- Para fazer o deploy da aplicação, seguir as instruções abaixo:
+
+```bash
+$ docker swarm init
+$ docker stack deploy -c docker-compose.yaml chatmess-stack
+```
