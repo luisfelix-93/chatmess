@@ -20,6 +20,16 @@ services:
       placement:
         constraints:
           - node.role == manager # O container do MongoDB deve rodar em um nó manager
+      resources:
+        limits:
+          cpus: '1' # Limite de CPU para o MongoDB
+          memory: 1GB # Limite de memória para o MongoDB
+        restart: on-failure # Reinicia o container em caso de falha
+      logging:
+        driver: "json-file" # Driver de log para o container
+        options:
+          max-size: "10M" # Tamanho máximo do arquivo de log
+          max-file: "3" # Número máximo de arquivos de log
     volumes:
       - mongo_data:/data/db # Volume para persistir os dados do MongoDB
       - mongo_logs:/var/log/mongodb # Volume para persistir os logs do MongoDB
@@ -47,6 +57,11 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
+      resources:
+        limits:
+          cpus: '0.5' # Limite de CPU para cada instância da API
+          memory: 512M # Limite de memória para cada instância da API
+      restart: on-failure # Reinicia o container em caso de falha
     environment:
       - DATABASEHELPER__CONNECTIONSTRING=mongodb://mongo:27017  # Use o nome do serviço para se conectar ao MongoDB
       - DATABASEHELPER__DATABASENAME=chatmess-db
@@ -62,6 +77,11 @@ services:
       - "3001:3001"
     deploy:
       replicas: 1 # Escale horizontalmente o WebSocket
+      resources:
+        limits: 
+          cpus: '0.5' # Limite de CPU para o WebSocket
+          memory: 512M # Limite de memória para o WebSocket
+        restart: on-failure # Reinicia o container em caso de falha
     environment:
       - URL_MESSAGE=http://chatmess-api:8080/Message  # Comunicação via nome do serviço
       - REDIS_HOST=redis
