@@ -11,6 +11,8 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro #  Mapeia a configuração do Nginx
     networks:
       - custom_network
+    depends_on:
+      - chatmess-api
   mongo:
     image: mongo:latest
     ports:
@@ -24,12 +26,12 @@ services:
         limits:
           cpus: '1' # Limite de CPU para o MongoDB
           memory: 1GB # Limite de memória para o MongoDB
-        restart: on-failure # Reinicia o container em caso de falha
-      logging:
-        driver: "json-file" # Driver de log para o container
-        options:
-          max-size: "10M" # Tamanho máximo do arquivo de log
-          max-file: "3" # Número máximo de arquivos de log
+    logging:
+      driver: "json-file" # Driver de log para o containe
+        
+      options:
+        max-size: "10M" # Tamanho máximo do arquivo de log
+        max-file: "3" # Número máximo de arquivos de log
     volumes:
       - mongo_data:/data/db # Volume para persistir os dados do MongoDB
       - mongo_logs:/var/log/mongodb # Volume para persistir os logs do MongoDB
@@ -57,17 +59,21 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
-      resources:
-        limits:
-          cpus: '0.5' # Limite de CPU para cada instância da API
-          memory: 512M # Limite de memória para cada instância da API
-      restart: on-failure # Reinicia o container em caso de falha
+      # resources:
+      #   limits:
+      #     cpus: '0.5' # Limite de CPU para cada instância da API
+      #     memory: 512M # Limite de memória para cada instância da API
     environment:
       - DATABASEHELPER__CONNECTIONSTRING=mongodb://mongo:27017  # Use o nome do serviço para se conectar ao MongoDB
       - DATABASEHELPER__DATABASENAME=chatmess-db
       - DATABASEHELPER__MESSAGECOLLECTION=message
       - DATABASEHELPER__USERCOLLECTION=user
       - DATABASEHELPER__ROOMCOLLECTION=room
+      - LOGGERHELPER__URILOGSERVER=http://loki:3100
+      - LOGGERHELPER__ENVIROMENT=Production
+    depends_on:
+      - mongo
+      - loki
     networks:
       - custom_network
     
@@ -76,19 +82,34 @@ services:
     ports:
       - "3001:3001"
     deploy:
-      replicas: 1 # Escale horizontalmente o WebSocket
-      resources:
-        limits: 
-          cpus: '0.5' # Limite de CPU para o WebSocket
-          memory: 512M # Limite de memória para o WebSocket
-        restart: on-failure # Reinicia o container em caso de falha
+      replicas: 1
+      restart_policy:  # Exemplo correto se necessário
+        condition: on-failure
     environment:
-      - URL_MESSAGE=http://chatmess-api:8080/Message  # Comunicação via nome do serviço
+      - URL_MESSAGE=http://chatmess-api:8080/Message
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     networks:
       - custom_network
 
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    volumes:
+      - loki-data:/loki/chunks
+    networks:
+      - custom_network
+  grafana:
+    image: grafana/grafana:latest
+    ports: 
+      - 4190:4190
+    volumes:
+     - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+    networks:
+      - custom_network
 networks:
   custom_network:
     driver: overlay # Rede overlay para comunicação entre os serviços
@@ -97,3 +118,5 @@ volumes:
   mongo_data:
   mongo_logs:
   redis_data:
+  loki-data:
+  grafana-data:
