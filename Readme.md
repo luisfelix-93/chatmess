@@ -6,8 +6,10 @@ Este arquivo `docker-compose.yaml` define um ambiente de conteinerização utili
 - Um banco de dados MongoDB
 - Um servidor Redis
 - Dois microsserviços: uma API e um servidor WebSocket
+- Servidor para persistência de logs 
+- Ferramenta de monitoramento de logs
 - Uma rede personalizada do tipo `overlay`
-- Volumes para persistência de dados do MongoDB e Redis
+- Volumes para persistência de dados do MongoDB, Redis, Grafana e Loki
 
 ## Serviços
 
@@ -47,6 +49,8 @@ Este arquivo `docker-compose.yaml` define um ambiente de conteinerização utili
 - **Variáveis de ambiente:**
   - Conexão com MongoDB
   - Nome do banco de dados e coleções
+  - URI do servidor de logs
+  - Ambiente
 - **Rede:** `custom_network`
 
 ### 5. **chatmess-ws**
@@ -58,6 +62,20 @@ Este arquivo `docker-compose.yaml` define um ambiente de conteinerização utili
   - Configuração do Redis para sincronização
 - **Rede:** `custom_network`
 
+### 6. Loki
+- **Imagem:** `grafana/loki: latest`
+- **Portas:** Mapeia `3100` do host para `3100` do container
+- **Volumes**:
+  - `loki:data`: Persistência de dados
+- **Rede:** `custom_network`
+
+### 7. Grafana
+- **Imagem:** `grafana/grafana: latest`
+- **Portas:** Mapeia `4190` do host para `4190` do container
+- **Volumes**:
+  - `grafana:data`: Persistência de dados
+- **Rede:** `custom_network`
+
 ## Redes
 - **custom_network**: Rede do tipo `overlay` para intercomunicação entre os containers
 
@@ -65,6 +83,8 @@ Este arquivo `docker-compose.yaml` define um ambiente de conteinerização utili
 - **mongo_data**: Armazena os dados do MongoDB
 - **mongo_logs**: Armazena os logs do MongoDB
 - **redis_data**: Armazena os dados do Redis
+- **loki-data**: Armazena os dados do Loki
+- **grafana-data**: Armazena os dados do Grafana
 
 
 ## Deploy
