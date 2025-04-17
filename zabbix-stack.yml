@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+
+  mariadb:
+    image: mariadb:10.5
+    environment:
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: zabbix
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - monitoring-net
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:alpine-6.4-latest
+    environment:
+      DB_SERVER_HOST: mariadb
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: zabbix
+    depends_on:
+      - mariadb
+    ports:
+      - "10051:10051"
+    networks:
+      - monitoring-net
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+  
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-mysql:alpine-6.4-latest
+    environment:
+      DB_SERVER_HOST: mariadb
+      MYSQL_DATABASE: zabbix
+      MYSQL_USER: zabbix
+      MYSQL_PASSWORD: zabbix
+      ZBX_SERVER_HOST: zabbix-server
+      PHP_TZ: America/Sao_Paulo
+    networks:
+      - monitoring-net
+    depends_on:
+      - zabbix-server
+    ports:
+     - "8081:8080"
+  
+  zabbix-agent:
+    image: zabbix/zabbix-agent:alpine-6.4-latest
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+    networks:
+      - monitoring-net
+    deploy:
+      mode: global
+  
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    volumes: 
+      - grafana_zabbix_data:/var/lib/grafana
+    networks:
+      - monitoring-net
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  monitoring-net:
+    external: true
+
+volumes:
+  mariadb_data:
+  grafana_zabbix_data:

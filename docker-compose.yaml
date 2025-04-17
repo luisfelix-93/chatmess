@@ -76,6 +76,7 @@ services:
       - loki
     networks:
       - custom_network
+      - monitoring-net
     
   chatmess-ws:
     image: luisffilho/chatmessws:latest
@@ -93,6 +94,7 @@ services:
       - ENVIROMENT=Production
     networks:
       - custom_network
+      - monitoring-net
 
   loki:
     image: grafana/loki:latest
@@ -102,29 +104,35 @@ services:
       - loki-data:/loki/chunks
     networks:
       - custom_network
+      - monitoring-net
 
   grafana:
     image: grafana/grafana:latest
     ports: 
-      - 4190:4190
+      - 4190:3000
     volumes:
      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app 
     depends_on:
       - loki
     networks:
       - custom_network
+      - monitoring-net
 
-  promtail:
-    image: grafana/promtail:latest
-    volumes: 
-      - ./promtail-config.yaml:/etc/promtail
-      - /var/log:/var/log
-    command: -config.file:/etc/promtail/config.yaml
+  # promtail: # Coleta os logs do websocket
+  #   image: grafana/promtail:latest
+  #   volumes: 
+  #     - ./promtail-config.yaml:/etc/promtail
+  #     - /var/log:/var/log
+  #   command: -config.file:/etc/promtail/config.yaml
 
 networks:
   custom_network:
     driver: overlay # Rede overlay para comunicação entre os serviços
-
+  monitoring-net:
+    external: true
+    
 volumes:
   mongo_data:
   mongo_logs:
